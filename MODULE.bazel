@@ -1,0 +1,23 @@
+"""Bazel depedencies"""
+
+module(
+    name = "zipzpu",
+    version = "0.0.1",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "bazel-orfs")
+git_override(
+    module_name = "bazel-orfs",
+    commit = "b16da67e50032682dc6f01252217bfb71cf89260",
+    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+)
+
+orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+orfs.default(
+    # To update, find latest at https://hub.docker.com/r/openroad/orfs/tags
+    image = "docker.io/openroad/orfs:v3.0-2593-gc1992e99",
+    sha256 = "e0bb2c4df152bc5bf762e9ca4cf63b06a9d935758857e447805190c4b68ee54c",
+)
+use_repo(orfs, "com_github_nixos_patchelf_download")
+use_repo(orfs, "docker_orfs")

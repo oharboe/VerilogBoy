@@ -1,0 +1,15 @@
+diff --git a/rtl/boy.v b/rtl/boy.v
+index 69c2d65..0452f5d 100644
+--- a/rtl/boy.v
++++ b/rtl/boy.v
+@@ -317,9 +317,7 @@ module boy(
+     assign wram_a = (dma_occupy_extbus) ? (dma_a[12:0]) : (cpu_a[12:0]);
+     assign wram_wr = (dma_occupy_extbus) ? (1'b0) : (wram_cpu_wr);
+ 
+-    singleport_ram #(
+-        .WORDS(8192)
+-    ) br_wram (
++    singleport_ram br_wram (
+         .clka(clk),
+         .wea(wram_wr),
+         .addra(wram_a), 

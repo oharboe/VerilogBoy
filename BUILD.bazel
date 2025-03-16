@@ -1,0 +1,56 @@
+"""Top level Bazel module, allows access to files by other modules."""
+
+exports_files(
+    glob([
+        "rtl/**/*.v",
+    ]),
+    visibility = [":__subpackages__"],
+)
+
+PATCHES = [
+    "boy",
+    "ppu",
+]
+
+filegroup(
+    name = "verilog",
+    srcs = glob(
+        ["rtl/**/*.v"],
+        # FIXME clean this up
+        exclude = ["rtl/brom.v"] + ["rtl/{module}.v".format(module = module) for module in PATCHES] + glob([
+            "rtl/*_top.v",
+        ]),
+    ) + [
+        ":brom_cleaned",
+    ] + [":{module}_cleaned".format(module = module) for module in PATCHES],
+    visibility = [":__subpackages__"],
+)
+
+# FIXME delete this once bootrom.mif is available to the synthesis flow
+genrule(
+    name = "brom_cleaned",
+    srcs = [
+        ":rtl/brom.v",
+    ],
+    outs = [
+        ":cleaned/rtl/brom_cleaned.v",
+    ],
+    cmd = """
+    sed -e "/\\$$readmemh/d" $< > $@
+    """,
+)
+
+[genrule(
+    name = "{module}_cleaned".format(module = module),
+    srcs = [
+        ":rtl/{module}.v".format(module = module),
+        "//openroad:{module}.patch".format(module = module),
+    ],
+    outs = [
+        ":cleaned/rtl/{module}_cleaned.v".format(module = module),
+    ],
+    cmd = """
+    cp $(location :rtl/{module}.v) tmp.v
+    patch --output=$@ tmp.v $(location //openroad:{module}.patch)
+    """.format(module = module),
+) for module in PATCHES]

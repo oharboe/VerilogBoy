@@ -1,0 +1,71 @@
+load("@bazel-orfs//:openroad.bzl", "orfs_flow")
+
+exports_files(
+    glob(["*.patch"]),
+    visibility = ["//visibility:public"],
+)
+
+FASTER = {
+    # ignore timing repair for now
+    "SETUP_SLACK_MARGIN": "-1000",
+    "SKIP_REPORT_METRICS": "1",
+    "SKIP_LAST_GASP": "1",
+    # skip checks for now, faster
+    "PWR_NETS_VOLTAGES": "",
+    "GND_NETS_VOLTAGES": "",
+    # This is slow, reenable it when more work has gone into .sdc files
+    # and SRAMs.
+    "GPL_TIMING_DRIVEN": "0",
+}
+
+# SRAMs are specific to PDK, mock one here by
+# creating it from flip flops and use mock_area
+# to reduce the size of the SRAM to something that
+# is a bit more reasonable.
+orfs_flow(
+    name = "singleport_ram",
+    # go through cts for more realism
+    abstract_stage = "cts",
+    arguments = FASTER | {
+        "CORE_UTILIZATION": "40",
+        "SYNTH_MEMORY_MAX_BITS": "65536",
+        "MACRO_BLOCKAGE_HALO": "0",
+        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
+    },
+    # The width/height of a real SRAM might be, say,
+    # 25% of that of a flip flop based SRAM.
+    mock_area = 0.25,
+    sources = {
+        "SDC_FILE": [":constraints_sram.sdc"],
+    },
+    verilog_files = [
+        "//:rtl/singleport_ram.v",
+    ],
+)
+
+orfs_flow(
+    name = "boy",
+    arguments = FASTER | {
+        "SYNTH_HIERARCHICAL": "1",
+        "SYNTH_MEMORY_MAX_BITS": "9216",
+        "CORE_UTILIZATION": "20",
+        "MIN_ROUTING_LAYER": "M2",
+        "MAX_ROUTING_LAYER": "M7",
+        "CORE_MARGIN": "2",
+        "MACRO_PLACE_HALO": "2 2",
+        "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
+        "PLACE_DENSITY": "0.25",
+        # FIXME when constraints.sdc has been set up properly
+        "SKIP_CTS_REPAIR_TIMING": "1",
+        "TNS_END_PERCENT": "0",
+    },
+    macros = [
+        ":singleport_ram_generate_abstract",
+    ],
+    sources = {
+        "SDC_FILE": [":constraints.sdc"],
+    },
+    verilog_files = [
+        "//:verilog",
+    ],
+)

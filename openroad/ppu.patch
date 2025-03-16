@@ -1,0 +1,15 @@
+diff --git a/rtl/ppu.v b/rtl/ppu.v
+index bf4e1e8..0450efb 100644
+--- a/rtl/ppu.v
++++ b/rtl/ppu.v
+@@ -192,9 +192,7 @@ module ppu(
+     wire [7:0]  vram_data_in;
+     wire [7:0]  vram_data_out;
+     
+-    singleport_ram #(
+-        .WORDS(8192)
+-    ) br_vram (
++    singleport_ram br_vram (
+         .clka(~clk),
+         .wea(vram_we),
+         .addra(vram_addr[12:0]),

@@ -136,3 +136,7 @@ Temporary Items
 *.wsdt
 *.dbgdt
 *.dnx
+
+bazel-bin
+bazel-out
+bazel-testlogs
